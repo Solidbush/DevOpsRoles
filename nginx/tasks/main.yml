@@ -13,6 +13,6 @@
   ansible.builtin.template:
     src: "nginx.conf.j2"
     dest: "/etc/nginx/sites-available/django"
-    mode: u=rw, g=r, o=r
+    mode: u=rw,g=r,o=r
   notify:
     - Restart Nginx
