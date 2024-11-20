@@ -1,0 +1,6 @@
+---
+# defaults file for nginx
+port: 80
+proxy_port: 8000
+static_files: /var/html/static/
+
