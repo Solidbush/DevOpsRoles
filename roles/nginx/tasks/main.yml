@@ -16,3 +16,10 @@
     mode: u=rw,g=r,o=r
   notify:
     - Restart Nginx
+
+- name: Delete default site
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  notify:
+    - Restart Nginx
