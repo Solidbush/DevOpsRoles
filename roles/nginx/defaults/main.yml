@@ -3,4 +3,7 @@
 nginx_port: 80
 nginx_proxy_port: 8000
 nginx_static_files: /var/html/static/
+nginx_source: nginx.conf.j2
+nginx_dest: /etc/nginx/sites-available/django
+nginx_path: /etc/nginx/sites-enabled/default
 

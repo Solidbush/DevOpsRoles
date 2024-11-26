@@ -11,15 +11,16 @@
 
 - name: Copy Nginx setup files
   ansible.builtin.template:
-    src: "nginx.conf.j2"
-    dest: "/etc/nginx/sites-available/django"
+    src: "{{ nginx_source }}"
+    dest: "{{ nginx_dest }}"
     mode: u=rw,g=r,o=r
+    validate: nginx -t -c %s
   notify:
     - Restart Nginx
 
 - name: Delete default site
   ansible.builtin.file:
-    path: "/etc/nginx/sites-enabled/default"
+    path: "{{ nginx_path }}"
     state: absent
   notify:
     - Restart Nginx
