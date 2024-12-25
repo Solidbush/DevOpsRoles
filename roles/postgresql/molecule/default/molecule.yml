@@ -1,0 +1,33 @@
+---
+
+driver:
+  name: docker
+
+platforms:
+  - name: master1
+    image: eniocarboni/docker-ubuntu-systemd:latest
+    groups:
+      - master
+    privileged: true
+    pre_build_image: true
+    networks:
+      - name: postgresql-network
+    ports:
+      - "5432:5432"
+
+  - name: replica1
+    image: eniocarboni/docker-ubuntu-systemd:latest
+    groups:
+      - replica
+    privileged: true
+    pre_build_image: true
+    networks:
+      - name: postgresql-network
+    ports:
+      - "5432:5432"
+
+provisioner:
+  name: ansible
+
+verifier:
+  name: ansible

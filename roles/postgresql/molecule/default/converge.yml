@@ -1,0 +1,33 @@
+---
+
+- name: "Подготовка"
+  hosts: all
+  become: true
+  tasks:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        update_cache: true
+      loop:
+        - gpg-agent
+        - rsync
+
+- name: "Настройка Master"
+  hosts: master
+  become: true
+  tasks:
+    - name: "Подключить роль postgresql"
+      include_role:
+        name: "postgresql"
+      vars:
+        postgresql_role: master
+
+- name: "Настройка Replica"
+  hosts: replica
+  become: true
+  tasks:
+    - name: "Подключить роль postgresql"
+      include_role:
+        name: "postgresql"
+      vars:
+        postgresql_role: replica

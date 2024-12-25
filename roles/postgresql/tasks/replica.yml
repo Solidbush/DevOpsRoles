@@ -1,0 +1,37 @@
+---
+- name: "Остановить postgresql"
+  service:
+    name: postgresql.service
+    state: stopped
+
+- name: "Удалить основную директорию"
+  become: true
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  file:
+    path: "{{ postgresql_data_dir }}/main"
+    state: absent
+
+- name: "Создать основную директорию"
+  become: true
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  file:
+    path: "{{ postgresql_data_dir }}/main"
+    state: directory
+    mode: go-rwx
+
+- name: "Создать резервную копию"
+  become: true
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  command: "pg_basebackup -P -R -X stream -c fast -h {{ item }} -U postgres -D {{ postgresql_data_dir }}/main"
+  environment:
+    PGPASSWORD: "{{ postgresql_postgres_password }}"
+  with_items: "{{ master_address }}"
+  notify: "restart postgresql"
+
+

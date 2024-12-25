@@ -1,0 +1,83 @@
+---
+- name: "Импортировать ключ репозитория"
+  apt_key:
+    url: "{{ postgresql_repo_key }}"
+    state: present
+
+- name: "Создать конфигурационный файл репозитория"
+  apt_repository:
+    repo: "{{ postgresql_repo }}"
+    state: present
+    filename: "{{ postgresql_repo_filename }}"
+
+- name: "Установить пакет"
+  apt:
+    name: "{{ postgresql_packages }}"
+    state: present
+    update_cache: yes
+
+- name: "Установить дополнительные пакеты поддержки"
+  apt:
+    name: "{{ postgresql_support_packages }}"
+    state: present
+    update_cache: yes
+
+- name: "Существует ли директория данных PostgreSQL"
+  file:
+    path: "{{ postgresql_data_dir }}/main"
+    owner: postgres
+    group: postgres
+    state: directory
+    mode: 0700
+
+- name: "Проверить, инициализирован ли PostgreSQL"
+  stat:
+    path: "{{ postgresql_data_dir }}/main/PG_VERSION"
+  register: pgdata_dir_version
+
+- name: "Инициализировать PostgreSQL"
+  become_user: postgres
+  command: "{{ postgresql_data_dir }}/bin/initdb -D {{ postgresql_data_dir }}/main"
+  when: not pgdata_dir_version.stat.exists
+
+- name: "Запустить и включить сервис PostgreSQL"
+  become: true
+  service:
+    name: postgresql.service
+    state: started
+    enabled: true
+
+- name: "Настроить pg_hba.conf"
+  template:
+    src: templates/pg_hba.conf.j2
+    dest: "{{ postgresql_data_dir }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: 0600
+  notify: "Перезапустить PostgreSQL"
+
+- name: "Остановить PostgreSQL"
+  service:
+    name: postgresql.service
+    state: stopped
+
+- name: "Синхронизировать директории"
+  synchronize:
+    src: "{{ postgresql_data_dir }}"
+    dest: "{{ postgresql_new_data_dir }}"
+  delegate_to: "{{ inventory_hostname }}"
+
+- name: "Настроить postgresql.conf"
+  lineinfile:
+    path: "{{ postgresql_config_dir }}/postgresql.conf"
+    regexp: '^data_directory'
+    line: "data_directory = '{{ postgresql_new_data_dir }}/{{ postgresql_version }}/main'"
+
+- name: "Изменить директорию данных"
+  set_fact:
+    postgresql_data_dir: "{{ postgresql_new_data_dir }}/{{ postgresql_version }}"
+
+- name: "Запустить PostgreSQL"
+  service:
+    name: postgresql.service
+    state: started

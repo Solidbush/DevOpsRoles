@@ -1,0 +1,6 @@
+---
+# tasks file for postgresql
+
+- include_tasks: initial_tasks.yml
+
+- include_tasks: "{{ postgresql_role }}.yml"
