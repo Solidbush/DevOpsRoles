@@ -1,0 +1,42 @@
+---
+- name: "Обновить пакеты"
+  become: true
+  apt:
+    name: "{{ loki_additional_pkg }}"
+    update_cache: yes
+
+- name: "Создать директории"
+  become: true
+  file:
+    name: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ loki_temp_dir }}"
+    - "{{ loki_etc_dir }}"
+
+- name: "Скачать предварительно скомпилированный бинарный файл и распаковать его"
+  become: true
+  unarchive:
+    src: "{{ loki_bin.url }}"
+    dest: "{{ loki_temp_dir }}"
+    remote_src: true
+    creates: "{{ loki_temp_dir }}/{{ loki_bin.file }}"
+
+- name: "Скачать конфигурационный файл"
+  become: true
+  get_url:
+    url: "{{ loki_config.url }}"
+    dest: "{{ loki_temp_dir }}/{{ loki_config.file }}"
+    mode: '0440'
+
+- name: "Переместить файлы Loki"
+  become: true
+  command: "mv {{ item.src }} {{ item.dest }}"
+  with_items:
+    - src: "{{ loki_temp_dir }}/{{ loki_bin.file }}"
+      dest: "{{ loki_bin.dir }}/"
+    - src: "{{ loki_temp_dir }}/{{ loki_config.file }}"
+      dest: "{{ loki_etc_dir }}/"
+
+- include_tasks: service.yml

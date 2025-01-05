@@ -1,0 +1,33 @@
+---
+- name: "Создать группу Prometheus"
+  become: true
+  group:
+    name: "{{ prometheus_group }}"
+    system: yes
+    state: present
+
+- name: "Создать пользователя Prometheus"
+  become: true
+  user:
+    name: "{{ prometheus_user.name }}"
+    group: "{{ prometheus_group }}"
+    system: yes
+    shell: "{{ prometheus_user.shell }}"
+
+- name: "Изменить владельца директорий Prometheus"
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ prometheus_user.name }}"
+    group: "{{ prometheus_group }}"
+    mode: '0775'
+  with_items: "{{ prometheus_dirs }}"
+
+- name: "Создать systemd сервис для Prometheus"
+  become: true
+  template:
+    src: "{{ prometheus_systemd.template }}"
+    dest: "{{ prometheus_systemd.path }}"
+  notify: "Start and Enable Service"

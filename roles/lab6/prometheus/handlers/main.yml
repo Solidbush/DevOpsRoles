@@ -1,0 +1,13 @@
+---
+- name: "Start and Enable Service"
+  become: true
+  service:
+    name: "{{ prometheus_systemd.name }}"
+    state: started
+    enabled: "{{ prometheus_systemd.enabled }}"
+
+- name: "Restart Service"
+  become: true
+  service:
+    name: "{{ prometheus_systemd.name }}"
+    state: restarted

@@ -1,0 +1,37 @@
+- name: "Обновить пакеты"
+  become: true
+  apt:
+    update_cache: yes
+
+- name: "Создать директории для Prometheus"
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items: "{{ prometheus_dirs }}"
+
+- name: "Извлечь файлы Prometheus"
+  unarchive:
+    src: "{{ prometheus_url }}"
+    dest: "{{ prometheus_pkg_path }}"
+    remote_src: true
+    creates: "{{ prometheus_pkg_path_with_pkg_name }}"
+  register: register_prometheus_file
+
+- name: "Переместить файлы Prometheus"
+  become: true
+  command: "mv {{ item.src }} {{ item.dest }}"
+  with_items: "{{ prometheus_files_to_move }}"
+  when: register_prometheus_file.changed == True
+
+- name: "Настроить конфигурацию Prometheus"
+  become: true
+  template:
+    src: "{{ prometheus_config.template }}"
+    dest: "{{ prometheus_config.path }}"
+
+- include_tasks: service.yml
+
+- include_tasks: source.yml
+  when: prometheus_scrape_configs is defined

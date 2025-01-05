@@ -1,0 +1,30 @@
+- name: "Создать директорию для дашбордов"
+  file:
+    path: "{{ grafana_dashboards_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: "Изменить стандартную конфигурацию"
+  command:
+    cmd: |
+      curl --fail --compressed
+      https://grafana.com/api/dashboards/{{ item.dashboard_id }}/revisions/{{ item.revision_id }}/download
+      -o {{ grafana_dashboards_dir }}/{{ item.dashboard_id }}.json
+    creates: "{{ grafana_dashboards_dir }}/{{ item.dashboard_id }}.json"
+  with_items: "{{ grafana_dashboards }}"
+
+- name: "Настроить источники данных для дашбордов"
+  replace:
+    dest: "{{ grafana_dashboards_dir }}/{{ item.dashboard_id }}.json"
+    regexp: '"(?:\${)?DS_[A-Z0-9_-]+(?:})?"'
+    replace: '"{{ item.datasource }}"'
+  with_items: "{{ grafana_dashboards }}"
+
+- name: "Импортировать дашборды"
+  grafana_dashboard:
+    url: "{{ grafana_api_url }}"
+    url_username: "{{ grafana_security.admin_user }}"
+    url_password: "{{ grafana_security.admin_password }}"
+    overwrite: yes
+    path: "{{ grafana_dashboards_dir }}/{{ item.dashboard_id }}.json"
+  with_items: "{{ grafana_dashboards }}"
